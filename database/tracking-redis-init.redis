@@ -1,0 +1,58 @@
+# =============================================
+# MotoTaxi — Tracking Service (Redis)
+# Base de datos: Redis 7 (DB index 0)
+# Motor: Redis - NoSQL In-Memory Store
+# =============================================
+# 
+# Redis no requiere script SQL — las claves se crean
+# automáticamente cuando el servicio las escribe.
+# Este archivo documenta la estructura de keys usada.
+#
+# EJECUTAR para inicializar (opcional):
+#   docker exec mototaxi-redis redis-cli -f tracking-redis-init.redis
+# =============================================
+
+# --------------- KEY PATTERNS ---------------
+
+# Ubicación de conductor (TTL: 60 segundos)
+# driver:location:{driverId}
+#   Tipo: HASH
+#   Campos: lat, lng, isOnline, updatedAt
+#
+# SET EXAMPLE:
+# HSET driver:location:demo-driver-001 lat -12.046374 lng -77.042793 isOnline true updatedAt "2026-05-03T20:00:00Z"
+# EXPIRE driver:location:demo-driver-001 60
+
+# Conductores disponibles (SET de IDs activos)
+# drivers:online
+#   Tipo: SET
+#   Valor: Set de driver IDs en línea
+#
+# SADD drivers:online demo-driver-001
+
+# Sala de chat por viaje (TTL: 24 horas)
+# ride:chat:{rideId}
+#   Tipo: LIST
+#   Valor: JSON de mensajes {senderId, message, timestamp}
+#
+# LPUSH ride:chat:demo-ride-001 '{"senderId":"demo-passenger-001","message":"Hola","timestamp":"..."}'
+# EXPIRE ride:chat:demo-ride-001 86400
+
+# Estado de viaje activo (TTL: 4 horas)
+# ride:active:{rideId}
+#   Tipo: STRING (JSON)
+#   Valor: JSON con estado del viaje
+#
+# SET ride:active:demo-ride-001 '{"status":"in_progress","passengerId":"demo-passenger-001","driverId":"demo-driver-001"}' EX 14400
+
+# Sesión de socket por usuario
+# socket:user:{userId}
+#   Tipo: STRING
+#   Valor: socketId del usuario
+#
+# SET socket:user:demo-driver-001 "abc123socket"
+
+# --------------- DATOS DE PRUEBA ---------------
+HSET driver:location:demo-driver-001 lat -12.046374 lng -77.042793 isOnline 1
+EXPIRE driver:location:demo-driver-001 300
+SADD drivers:online demo-driver-001

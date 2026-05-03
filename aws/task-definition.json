@@ -1,0 +1,173 @@
+{
+  "family": "mototaxi-services",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "1024",
+  "memory": "2048",
+  "executionRoleArn": "arn:aws:iam::role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "api-gateway",
+      "image": "<AWS_ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/mototaxi/api-gateway:latest",
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "PORT", "value": "3000" },
+        { "name": "AUTH_SERVICE_URL", "value": "http://localhost:3001" },
+        { "name": "RIDES_SERVICE_URL", "value": "http://localhost:3002" },
+        { "name": "RATINGS_SERVICE_URL", "value": "http://localhost:3003" },
+        { "name": "TRACKING_SERVICE_URL", "value": "http://localhost:3004" },
+        { "name": "PAYMENTS_SERVICE_URL", "value": "http://localhost:3005" }
+      ],
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/mototaxi",
+          "awslogs-region": "<REGION>",
+          "awslogs-stream-prefix": "api-gateway"
+        }
+      }
+    },
+    {
+      "name": "auth-service",
+      "image": "<AWS_ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/mototaxi/auth-service:latest",
+      "portMappings": [
+        {
+          "containerPort": 3001,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "PORT", "value": "3001" },
+        { "name": "DB_HOST", "value": "<RDS_ENDPOINT>" },
+        { "name": "DB_PORT", "value": "3306" },
+        { "name": "DB_USER", "value": "admin" },
+        { "name": "DB_PASSWORD", "value": "mototaxi123" },
+        { "name": "DB_NAME", "value": "mototaxi" },
+        { "name": "JWT_SECRET", "value": "mototaxi-jwt-secret-key-2024" }
+      ],
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/mototaxi",
+          "awslogs-region": "<REGION>",
+          "awslogs-stream-prefix": "auth-service"
+        }
+      }
+    },
+    {
+      "name": "rides-service",
+      "image": "<AWS_ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/mototaxi/rides-service:latest",
+      "portMappings": [
+        {
+          "containerPort": 3002,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "PORT", "value": "3002" },
+        { "name": "DB_HOST", "value": "<RDS_ENDPOINT>" },
+        { "name": "DB_PORT", "value": "3306" },
+        { "name": "DB_USER", "value": "admin" },
+        { "name": "DB_PASSWORD", "value": "mototaxi123" },
+        { "name": "DB_NAME", "value": "mototaxi" }
+      ],
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/mototaxi",
+          "awslogs-region": "<REGION>",
+          "awslogs-stream-prefix": "rides-service"
+        }
+      }
+    },
+    {
+      "name": "ratings-service",
+      "image": "<AWS_ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/mototaxi/ratings-service:latest",
+      "portMappings": [
+        {
+          "containerPort": 3003,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "PORT", "value": "3003" },
+        { "name": "DB_HOST", "value": "<RDS_ENDPOINT>" },
+        { "name": "DB_PORT", "value": "3306" },
+        { "name": "DB_USER", "value": "admin" },
+        { "name": "DB_PASSWORD", "value": "mototaxi123" },
+        { "name": "DB_NAME", "value": "mototaxi" }
+      ],
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/mototaxi",
+          "awslogs-region": "<REGION>",
+          "awslogs-stream-prefix": "ratings-service"
+        }
+      }
+    },
+    {
+      "name": "tracking-service",
+      "image": "<AWS_ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/mototaxi/tracking-service:latest",
+      "portMappings": [
+        {
+          "containerPort": 3004,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "PORT", "value": "3004" },
+        { "name": "DB_HOST", "value": "<RDS_ENDPOINT>" },
+        { "name": "DB_PORT", "value": "3306" },
+        { "name": "DB_USER", "value": "admin" },
+        { "name": "DB_PASSWORD", "value": "mototaxi123" },
+        { "name": "DB_NAME", "value": "mototaxi" }
+      ],
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/mototaxi",
+          "awslogs-region": "<REGION>",
+          "awslogs-stream-prefix": "tracking-service"
+        }
+      }
+    },
+    {
+      "name": "payments-service",
+      "image": "<AWS_ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/mototaxi/payments-service:latest",
+      "portMappings": [
+        {
+          "containerPort": 3005,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "PORT", "value": "3005" },
+        { "name": "DB_HOST", "value": "<RDS_ENDPOINT>" },
+        { "name": "DB_PORT", "value": "3306" },
+        { "name": "DB_USER", "value": "admin" },
+        { "name": "DB_PASSWORD", "value": "mototaxi123" },
+        { "name": "DB_NAME", "value": "mototaxi" }
+      ],
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/mototaxi",
+          "awslogs-region": "<REGION>",
+          "awslogs-stream-prefix": "payments-service"
+        }
+      }
+    }
+  ]
+}

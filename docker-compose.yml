@@ -1,0 +1,318 @@
+version: '3.8'
+
+services:
+
+  # ================================================================
+  # BASES DE DATOS — Cada microservicio tiene su propia instancia
+  # (Principio de autonomía de datos en arquitectura de microservicios)
+  # ================================================================
+
+  # DB 1: MySQL para Auth Service
+  mysql-auth:
+    image: mysql:8.0
+    container_name: mototaxi-db-auth
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: mototaxi123
+      MYSQL_DATABASE: mototaxi_auth
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_auth_data:/var/lib/mysql
+      - ./database/auth-init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pmototaxi123"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - mototaxi-network
+
+  # DB 2: MySQL para Rides Service
+  mysql-rides:
+    image: mysql:8.0
+    container_name: mototaxi-db-rides
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: mototaxi123
+      MYSQL_DATABASE: mototaxi_rides
+    ports:
+      - "3308:3306"
+    volumes:
+      - mysql_rides_data:/var/lib/mysql
+      - ./database/rides-init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pmototaxi123"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - mototaxi-network
+
+  # DB 3: MongoDB para Ratings Service (NoSQL ✅)
+  mongodb:
+    image: mongo:7.0
+    container_name: mototaxi-mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_DATABASE: mototaxi_ratings
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./database/ratings-init.js:/docker-entrypoint-initdb.d/ratings-init.js
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')", "--quiet"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    networks:
+      - mototaxi-network
+
+  # DB 4: Redis para Tracking Service (NoSQL In-Memory ✅)
+  redis:
+    image: redis:7-alpine
+    container_name: mototaxi-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mototaxi-network
+
+  # DB 5: MySQL para Payments Service
+  mysql-payments:
+    image: mysql:8.0
+    container_name: mototaxi-db-payments
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: mototaxi123
+      MYSQL_DATABASE: mototaxi_payments
+    ports:
+      - "3309:3306"
+    volumes:
+      - mysql_payments_data:/var/lib/mysql
+      - ./database/payments-init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pmototaxi123"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - mototaxi-network
+
+  # ================================================================
+  # API GATEWAY
+  # ================================================================
+  api-gateway:
+    build: ./services/api-gateway
+    container_name: mototaxi-gateway
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      AUTH_SERVICE_URL:     http://auth-service:3001
+      RIDES_SERVICE_URL:    http://rides-service:3002
+      RATINGS_SERVICE_URL:  http://ratings-service:3003
+      TRACKING_SERVICE_URL: http://tracking-service:3004
+      PAYMENTS_SERVICE_URL: http://payments-service:3005
+    depends_on:
+      auth-service:
+        condition: service_started
+      rides-service:
+        condition: service_started
+      ratings-service:
+        condition: service_started
+      tracking-service:
+        condition: service_started
+      payments-service:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - mototaxi-network
+
+  # ================================================================
+  # MICROSERVICIO 1: AUTH SERVICE — DB: MySQL (mototaxi_auth)
+  # ================================================================
+  auth-service:
+    build: ./services/auth-service
+    container_name: mototaxi-auth
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      DB_HOST:     mysql-auth
+      DB_PORT:     3306
+      DB_USER:     root
+      DB_PASSWORD: mototaxi123
+      DB_NAME:     mototaxi_auth
+      JWT_SECRET:  mototaxi-jwt-secret-key-2024
+    depends_on:
+      mysql-auth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - mototaxi-network
+
+  # ================================================================
+  # MICROSERVICIO 2: RIDES SERVICE — DB: MySQL (mototaxi_rides)
+  # ================================================================
+  rides-service:
+    build: ./services/rides-service
+    container_name: mototaxi-rides
+    restart: always
+    ports:
+      - "3002:3002"
+    environment:
+      PORT: 3002
+      DB_HOST:     mysql-rides
+      DB_PORT:     3306
+      DB_USER:     root
+      DB_PASSWORD: mototaxi123
+      DB_NAME:     mototaxi_rides
+    depends_on:
+      mysql-rides:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3002/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - mototaxi-network
+
+  # ================================================================
+  # MICROSERVICIO 3: RATINGS SERVICE — DB: MongoDB (mototaxi_ratings) ✅ NoSQL
+  # ================================================================
+  ratings-service:
+    build: ./services/ratings-service
+    container_name: mototaxi-ratings
+    restart: always
+    ports:
+      - "3003:3003"
+    environment:
+      PORT:      3003
+      MONGO_URI: mongodb://mongodb:27017/mototaxi_ratings
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3003/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - mototaxi-network
+
+  # ================================================================
+  # MICROSERVICIO 4: TRACKING SERVICE — DB: MySQL + Redis ✅ NoSQL In-Memory
+  # ================================================================
+  tracking-service:
+    build: ./services/tracking-service
+    container_name: mototaxi-tracking
+    restart: always
+    ports:
+      - "3004:3004"
+    environment:
+      PORT:        3004
+      DB_HOST:     mysql-rides
+      DB_PORT:     3306
+      DB_USER:     root
+      DB_PASSWORD: mototaxi123
+      DB_NAME:     mototaxi_rides
+      REDIS_HOST:  redis
+      REDIS_PORT:  6379
+    depends_on:
+      mysql-rides:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3004/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - mototaxi-network
+
+  # ================================================================
+  # MICROSERVICIO 5: PAYMENTS SERVICE — DB: MySQL (mototaxi_payments)
+  # ================================================================
+  payments-service:
+    build: ./services/payments-service
+    container_name: mototaxi-payments
+    restart: always
+    ports:
+      - "3005:3005"
+    environment:
+      PORT:        3005
+      DB_HOST:     mysql-payments
+      DB_PORT:     3306
+      DB_USER:     root
+      DB_PASSWORD: mototaxi123
+      DB_NAME:     mototaxi_payments
+    depends_on:
+      mysql-payments:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3005/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - mototaxi-network
+
+  # ================================================================
+  # NGINX — Reverse Proxy + HTTPS (mrt.viewdns.net)
+  # Certbot Let's Encrypt para SSL
+  # ================================================================
+  nginx:
+    build: ./nginx
+    container_name: mototaxi-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro        # Certificados SSL
+      - /var/www/certbot:/var/www/certbot:ro         # Renovación Certbot
+      - ./frontend/dist:/var/www/html/app:ro         # Frontend App compilado
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    networks:
+      - mototaxi-network
+
+# ================================================================
+# VOLÚMENES — Persistencia de datos por servicio
+# ================================================================
+volumes:
+  mysql_auth_data:
+  mysql_rides_data:
+  mysql_payments_data:
+  mongodb_data:
+  redis_data:
+
+# ================================================================
+# RED INTERNA
+# ================================================================
+networks:
+  mototaxi-network:
+    driver: bridge

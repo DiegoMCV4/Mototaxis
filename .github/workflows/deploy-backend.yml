@@ -1,0 +1,135 @@
+name: Deploy Backend — AWS ECS
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'services/**'
+      - 'docker-compose.yml'
+      - '.github/workflows/deploy-backend.yml'
+
+env:
+  AWS_REGION:   us-east-1
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
+  CLUSTER_NAME: mototaxi-cluster
+
+jobs:
+  deploy-backend:
+    name: 🚀 Deploy Backend a AWS ECS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ⬇️ Checkout código
+        uses: actions/checkout@v4
+
+      # ── Configurar credenciales AWS ──────────────────────────
+      - name: 🔐 Configurar credenciales AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ env.AWS_REGION }}
+
+      # ── Login a Amazon ECR ───────────────────────────────────
+      - name: 🔑 Login a Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # ── Build y Push de cada microservicio ──────────────────
+      - name: 🏗️ Build & Push — api-gateway
+        run: |
+          docker build -t $ECR_REGISTRY/mototaxi/api-gateway:$GITHUB_SHA ./services/api-gateway
+          docker push $ECR_REGISTRY/mototaxi/api-gateway:$GITHUB_SHA
+          docker tag $ECR_REGISTRY/mototaxi/api-gateway:$GITHUB_SHA $ECR_REGISTRY/mototaxi/api-gateway:latest
+          docker push $ECR_REGISTRY/mototaxi/api-gateway:latest
+
+      - name: 🏗️ Build & Push — auth-service
+        run: |
+          docker build -t $ECR_REGISTRY/mototaxi/auth-service:$GITHUB_SHA ./services/auth-service
+          docker push $ECR_REGISTRY/mototaxi/auth-service:$GITHUB_SHA
+          docker tag $ECR_REGISTRY/mototaxi/auth-service:$GITHUB_SHA $ECR_REGISTRY/mototaxi/auth-service:latest
+          docker push $ECR_REGISTRY/mototaxi/auth-service:latest
+
+      - name: 🏗️ Build & Push — rides-service
+        run: |
+          docker build -t $ECR_REGISTRY/mototaxi/rides-service:$GITHUB_SHA ./services/rides-service
+          docker push $ECR_REGISTRY/mototaxi/rides-service:$GITHUB_SHA
+          docker tag $ECR_REGISTRY/mototaxi/rides-service:$GITHUB_SHA $ECR_REGISTRY/mototaxi/rides-service:latest
+          docker push $ECR_REGISTRY/mototaxi/rides-service:latest
+
+      - name: 🏗️ Build & Push — ratings-service
+        run: |
+          docker build -t $ECR_REGISTRY/mototaxi/ratings-service:$GITHUB_SHA ./services/ratings-service
+          docker push $ECR_REGISTRY/mototaxi/ratings-service:$GITHUB_SHA
+          docker tag $ECR_REGISTRY/mototaxi/ratings-service:$GITHUB_SHA $ECR_REGISTRY/mototaxi/ratings-service:latest
+          docker push $ECR_REGISTRY/mototaxi/ratings-service:latest
+
+      - name: 🏗️ Build & Push — tracking-service
+        run: |
+          docker build -t $ECR_REGISTRY/mototaxi/tracking-service:$GITHUB_SHA ./services/tracking-service
+          docker push $ECR_REGISTRY/mototaxi/tracking-service:$GITHUB_SHA
+          docker tag $ECR_REGISTRY/mototaxi/tracking-service:$GITHUB_SHA $ECR_REGISTRY/mototaxi/tracking-service:latest
+          docker push $ECR_REGISTRY/mototaxi/tracking-service:latest
+
+      - name: 🏗️ Build & Push — payments-service
+        run: |
+          docker build -t $ECR_REGISTRY/mototaxi/payments-service:$GITHUB_SHA ./services/payments-service
+          docker push $ECR_REGISTRY/mototaxi/payments-service:$GITHUB_SHA
+          docker tag $ECR_REGISTRY/mototaxi/payments-service:$GITHUB_SHA $ECR_REGISTRY/mototaxi/payments-service:latest
+          docker push $ECR_REGISTRY/mototaxi/payments-service:latest
+
+      # ── Actualizar servicios ECS ─────────────────────────────
+      - name: 🔄 Actualizar ECS — api-gateway
+        run: |
+          aws ecs update-service \
+            --cluster $CLUSTER_NAME \
+            --service mototaxi-api-gateway \
+            --force-new-deployment \
+            --region $AWS_REGION
+
+      - name: 🔄 Actualizar ECS — auth-service
+        run: |
+          aws ecs update-service \
+            --cluster $CLUSTER_NAME \
+            --service mototaxi-auth-service \
+            --force-new-deployment \
+            --region $AWS_REGION
+
+      - name: 🔄 Actualizar ECS — rides-service
+        run: |
+          aws ecs update-service \
+            --cluster $CLUSTER_NAME \
+            --service mototaxi-rides-service \
+            --force-new-deployment \
+            --region $AWS_REGION
+
+      - name: 🔄 Actualizar ECS — ratings-service
+        run: |
+          aws ecs update-service \
+            --cluster $CLUSTER_NAME \
+            --service mototaxi-ratings-service \
+            --force-new-deployment \
+            --region $AWS_REGION
+
+      - name: 🔄 Actualizar ECS — tracking-service
+        run: |
+          aws ecs update-service \
+            --cluster $CLUSTER_NAME \
+            --service mototaxi-tracking-service \
+            --force-new-deployment \
+            --region $AWS_REGION
+
+      - name: 🔄 Actualizar ECS — payments-service
+        run: |
+          aws ecs update-service \
+            --cluster $CLUSTER_NAME \
+            --service mototaxi-payments-service \
+            --force-new-deployment \
+            --region $AWS_REGION
+
+      - name: ✅ Deploy completado
+        run: |
+          echo "🎉 Todos los microservicios actualizados en AWS ECS"
+          echo "   Cluster: $CLUSTER_NAME"
+          echo "   Región:  $AWS_REGION"
+          echo "   Commit:  $GITHUB_SHA"

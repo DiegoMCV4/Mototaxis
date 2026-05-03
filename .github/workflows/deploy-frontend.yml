@@ -1,0 +1,105 @@
+name: Deploy Frontend — Vercel (Landing) + S3 (App)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'frontend/**'
+      - 'landing/**'
+      - '.github/workflows/deploy-frontend.yml'
+
+jobs:
+  # ============================================================
+  # JOB 1: Landing Page → Vercel (automático vía integración)
+  # ============================================================
+  deploy-landing-vercel:
+    name: 🌐 Deploy Landing Page → Vercel
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ⬇️ Checkout código
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Configurar Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: landing/package-lock.json
+
+      - name: 📦 Instalar dependencias — Landing
+        run: npm install
+        working-directory: landing
+
+      - name: 🏗️ Build Landing Page
+        run: npm run build
+        working-directory: landing
+        env:
+          VITE_APP_URL: https://app.mrt.viewdns.net
+          VITE_PLAY_STORE_URL: ${{ secrets.PLAY_STORE_URL || '#' }}
+
+      - name: 🚀 Deploy a Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token:   ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id:  ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_LANDING }}
+          working-directory: landing
+          vercel-args: '--prod'
+
+  # ============================================================
+  # JOB 2: App Operativa → S3 + CloudFront (AWS)
+  # ============================================================
+  deploy-app-aws:
+    name: 📱 Deploy App Operativa → AWS S3
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ⬇️ Checkout código
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Configurar Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 📦 Instalar dependencias — Frontend App
+        run: npm install
+        working-directory: frontend
+
+      - name: 🏗️ Build App (producción)
+        run: npm run build
+        working-directory: frontend
+        env:
+          VITE_API_URL:    https://mrt.viewdns.net/api
+          VITE_SOCKET_URL: https://mrt.viewdns.net
+
+      - name: 🔐 Configurar credenciales AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            us-east-1
+
+      - name: 📤 Subir build a S3
+        run: |
+          aws s3 sync frontend/dist/ s3://${{ secrets.S3_BUCKET_APP }} \
+            --delete \
+            --cache-control "max-age=31536000,public" \
+            --exclude "index.html"
+          aws s3 cp frontend/dist/index.html s3://${{ secrets.S3_BUCKET_APP }}/index.html \
+            --cache-control "no-cache,no-store,must-revalidate"
+
+      - name: 🔄 Invalidar caché CloudFront
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
+
+      - name: ✅ Deploy completado
+        run: |
+          echo "🎉 Frontend App desplegado en AWS"
+          echo "   App URL: https://mrt.viewdns.net"
+          echo "   Bucket:  ${{ secrets.S3_BUCKET_APP }}"
