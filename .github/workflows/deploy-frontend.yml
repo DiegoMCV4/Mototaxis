@@ -72,6 +72,7 @@ jobs:
           VITE_SOCKET_URL: https://mrt.viewdns.net
 
       - name: 🔐 Configurar credenciales AWS
+        if: ${{ secrets.S3_BUCKET_APP != '' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -79,6 +80,7 @@ jobs:
           aws-region:            us-east-1
 
       - name: 📤 Subir build a S3
+        if: ${{ secrets.S3_BUCKET_APP != '' }}
         run: |
           aws s3 sync frontend/dist/ s3://${{ secrets.S3_BUCKET_APP }} \
             --delete \
@@ -88,6 +90,7 @@ jobs:
             --cache-control "no-cache,no-store,must-revalidate"
 
       - name: 🔄 Invalidar caché CloudFront
+        if: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID != '' }}
         run: |
           aws cloudfront create-invalidation \
             --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
@@ -95,6 +98,9 @@ jobs:
 
       - name: ✅ Deploy completado
         run: |
-          echo "🎉 Frontend App desplegado en AWS"
-          echo "   App URL: https://mrt.viewdns.net"
-          echo "   Bucket:  ${{ secrets.S3_BUCKET_APP }}"
+          echo "🎉 Proceso de despliegue finalizado"
+          if [ "${{ secrets.S3_BUCKET_APP }}" != "" ]; then
+            echo "   Frontend App desplegado en AWS"
+          else
+            echo "   ⚠️ Salteado despliegue AWS (sin S3_BUCKET_APP)"
+          fi
