@@ -78,14 +78,51 @@ Una única base de código que se compila para iOS y Android.
 
 ## 6. Estrategia de Despliegue (Cloud)
 
-### 6.1 Backend en Amazon Web Services (AWS)
-Toda la infraestructura de microservicios, el API Gateway, las bases de datos MySQL y la caché de Redis residen en AWS (utilizando instancias EC2). Se utilizan contenedores **Docker** junto a `docker-compose` para orquestar de manera determinista todos los servicios en el servidor en la nube.
+La infraestructura de producción ha sido desplegada utilizando **Amazon Web Services (AWS)** y **Vercel**, adoptando un enfoque basado en contenedores Docker para garantizar la portabilidad y reproducibilidad del entorno.
 
-### 6.2 Frontend en Vercel
-La *Landing Page* pública se despliega a través de **Vercel** debido a su excelente CDN global y su integración continua (CI) directamente con la rama `main` del repositorio de GitHub, garantizando tiempos de carga mínimos para la promoción del producto.
+### 6.1 Backend en Amazon Web Services (AWS — EC2 + Docker Compose)
 
-### 6.3 Frontend de la Aplicación en AWS
-El panel administrativo (Dashboard Web), al interactuar con datos altamente sensibles e integrarse estrechamente con el backend corporativo, se despliega utilizando los servicios de **AWS** (como S3 + CloudFront o servido a través del mismo Nginx de la instancia EC2), compartiendo el esquema de seguridad perimetral.
+El backend completo se ejecuta sobre una instancia **Amazon EC2 (Ubuntu Server)** en la región `us-east-1`. La orquestación de los 12 contenedores (microservicios + bases de datos + Nginx) se realiza con **Docker Compose**, lo que garantiza que todos los servicios levanten en el orden correcto respetando sus dependencias (health checks).
+
+**Arquitectura de la instancia EC2:**
+
+| Capa | Contenedor | Tecnología | Puerto Expuesto |
+|---|---|---|---|
+| Reverse Proxy | Nginx | Nginx + Certbot (HTTPS) | 80, 443 |
+| API Gateway | mototaxi-gateway | Node.js + Express | 3000 |
+| Microservicio 1 | mototaxi-auth | Node.js + JWT | 3001 (interno) |
+| Microservicio 2 | mototaxi-rides | Node.js + Express | 3002 (interno) |
+| Microservicio 3 | mototaxi-ratings | Node.js + Mongoose | 3003 (interno) |
+| Microservicio 4 | mototaxi-tracking | Node.js + Socket.IO | 3004 |
+| Microservicio 5 | mototaxi-payments | Node.js + Express | 3005 (interno) |
+| Base de datos 1 | mototaxi-db-auth | MySQL 8.0 | 3307 (interno) |
+| Base de datos 2 | mototaxi-db-rides | MySQL 8.0 | 3308 (interno) |
+| Base de datos 3 | mototaxi-mongodb | MongoDB 7.0 | 27017 (interno) |
+| Base de datos 4 | mototaxi-redis | Redis 7 | 6379 (interno) |
+| Base de datos 5 | mototaxi-db-payments | MySQL 8.0 | 3309 (interno) |
+
+> **IP Pública del servidor:** `3.133.144.159`
+> Solo los puertos 80, 443, 3000 y 3004 están expuestos al exterior mediante las reglas del **Security Group** de AWS. El resto de los servicios están aislados en la red interna Docker `mototaxi-network`.
+
+**Flujo del tráfico en producción:**
+```
+Usuario (HTTPS) → Nginx (443) → API Gateway (3000) → Microservicio correspondiente → Base de datos propia
+```
+
+### 6.2 Frontend Landing Page en Vercel
+La *Landing Page* pública (`/landing`) está desplegada en **Vercel** y disponible en:
+🔗 **https://landing-psi-blond.vercel.app**
+
+Vercel fue elegido por su CDN global, tiempos de carga mínimos y su integración continua (CI/CD) directamente con la rama `main` del repositorio de GitHub. Cada `git push` a `main` actualiza automáticamente el sitio en producción sin intervención manual.
+
+### 6.3 Frontend de la Aplicación (Dashboard) en AWS
+El panel administrativo web (`/frontend`) se sirve a través del mismo **Nginx** de la instancia EC2, compartiendo el dominio y el esquema de seguridad HTTPS configurado con **Certbot (Let's Encrypt)**. Los archivos compilados (`/dist`) son montados como volumen en el contenedor de Nginx.
+
+**Pipeline CI/CD (GitHub Actions):**
+Los tres workflows definidos en `.github/workflows/` automatizan el ciclo completo:
+- `ci.yml` → Valida el código (lint + health checks) en cada `push`.
+- `deploy-frontend.yml` → Publica la Landing en Vercel automáticamente.
+- `deploy-backend.yml` → Preparado para escalar a AWS ECS/ECR en el futuro.
 
 ## 7. Caso de Uso y Ciclo de Vida del Desarrollo
 
