@@ -26,6 +26,15 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            # Instalar Docker si no existe
+            if ! command -v docker &> /dev/null; then
+              sudo apt-get update
+              sudo apt-get install -y docker.io docker-compose
+              sudo systemctl start docker
+              sudo systemctl enable docker
+              sudo usermod -aG docker ubuntu
+            fi
+            
             cd Mototaxis || git clone https://github.com/DiegoMCV4/Mototaxis.git
             cd Mototaxis
             git pull origin main
@@ -40,6 +49,11 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            # Asegurar que docker-compose esté disponible
+            if ! command -v docker-compose &> /dev/null; then
+              sudo apt-get update && sudo apt-get install -y docker-compose
+            fi
+
             cd Mototaxis || git clone https://github.com/DiegoMCV4/Mototaxis.git
             cd Mototaxis
             git pull origin main
