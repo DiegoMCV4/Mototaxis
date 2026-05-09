@@ -4,12 +4,14 @@
 // Puerto: 3000
 // =============================================
 const express = require('express');
+const http = require('http');
 const cors = require('cors');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const { swaggerUi, swaggerSpecs } = require('./swagger');
 require('dotenv').config();
 
 const app = express();
+const server = http.createServer(app);
 
 app.use(cors({
   origin: '*',
@@ -118,8 +120,12 @@ app.use('/socket.io', createProxyMiddleware({
   target: TRACKING_SERVICE,
   changeOrigin: true,
   ws: true,
+  proxyTimeout: 60000,
+  timeout: 60000,
   onError: (err, req, res) => {
     console.error('❌ Tracking WebSocket error:', err.message);
+    if (res.writeHead) res.writeHead(503);
+    if (res.end) res.end('WebSocket proxy error');
   }
 }));
 
@@ -140,7 +146,7 @@ app.use('*', (req, res) => {
 });
 
 // ==================== INICIAR SERVIDOR ====================
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`🔀 API Gateway corriendo en puerto ${PORT}`);
   console.log(`   Auth Service:     ${AUTH_SERVICE}`);
   console.log(`   Rides Service:    ${RIDES_SERVICE}`);

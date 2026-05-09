@@ -36,20 +36,19 @@ CREATE TABLE IF NOT EXISTS emergency_contacts (
 );
 
 -- ==================== ÍNDICES ====================
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-CREATE INDEX IF NOT EXISTS idx_users_type ON users(user_type);
-CREATE INDEX IF NOT EXISTS idx_emergency_user ON emergency_contacts(user_id);
+CREATE INDEX idx_users_type ON users(user_type);
+CREATE INDEX idx_emergency_user ON emergency_contacts(user_id);
 
 -- ==================== DATOS DE PRUEBA ====================
 -- Password: "password" hasheado con bcrypt rounds=10
 INSERT INTO users (id, email, password, full_name, user_type, photo, rating, rides, wallet_balance, phone) VALUES
-('demo-passenger-001', 'passenger@demo.com',
- '$2a$10$xVqYLGEwGr.pHJdP8BTRouPh1KBkfGBvXMEB9YSBvDAKpLtNIqkUq',
- 'Pasajero Demo', 'passenger',
- 'https://api.dicebear.com/7.x/avataaars/svg?seed=passenger',
- 5.0, 12, 150.00, '999-000-001'),
-('demo-driver-001', 'driver@demo.com',
- '$2a$10$xVqYLGEwGr.pHJdP8BTRouPh1KBkfGBvXMEB9YSBvDAKpLtNIqkUq',
+ ('demo-passenger-001', 'passenger@demo.com',
+  '$2a$10$V8qo4awYy6jogqIP6L5i9.ZdJ0cJ3lh0/paidMxUG7UIw41CFk.T6',
+  'Pasajero Demo', 'passenger',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=passenger',
+  5.0, 12, 150.00, '999-000-001'),
+ ('demo-driver-001', 'driver@demo.com',
+  '$2a$10$V8qo4awYy6jogqIP6L5i9.ZdJ0cJ3lh0/paidMxUG7UIw41CFk.T6',
  'Conductor Demo', 'driver',
  'https://api.dicebear.com/7.x/avataaars/svg?seed=driver',
  4.8, 45, 1250.00, '999-000-002')

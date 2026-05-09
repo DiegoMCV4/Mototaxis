@@ -78,6 +78,22 @@ class MySQLTrackingRepository extends TrackingRepository {
   async setDriverOffline(driverId) {
     await this.db.query('UPDATE driver_locations SET is_online = FALSE WHERE driver_id = ?', [driverId]);
   }
+
+  async createRide(data) {
+    const { rideId, passengerId, pickupLocation, pickupLat, pickupLng, dropoffLocation, dropoffLat, dropoffLng, estimatedPrice, status } = data;
+    await this.db.query(
+      `INSERT INTO rides (id, passenger_id, pickup_location, pickup_lat, pickup_lng, dropoff_location, dropoff_lat, dropoff_lng, estimated_price, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [rideId, passengerId, pickupLocation, pickupLat, pickupLng, dropoffLocation, dropoffLat, dropoffLng, estimatedPrice, status || 'searching']
+    );
+  }
+
+  async updateRideStatus(rideId, status) {
+    await this.db.query(
+      'UPDATE rides SET status = ? WHERE id = ?',
+      [status, rideId]
+    );
+  }
 }
 
 module.exports = MySQLTrackingRepository;

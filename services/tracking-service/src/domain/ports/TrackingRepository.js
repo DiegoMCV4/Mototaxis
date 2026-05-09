@@ -5,6 +5,8 @@ class TrackingRepository {
   async saveMessage(message) { throw new Error('Method not implemented'); }
   async findMessagesByRideId(rideId) { throw new Error('Method not implemented'); }
   async setDriverOffline(driverId) { throw new Error('Method not implemented'); }
+  async createRide(data) { throw new Error('Method not implemented'); }
+  async updateRideStatus(rideId, status) { throw new Error('Method not implemented'); }
 }
 
 module.exports = TrackingRepository;

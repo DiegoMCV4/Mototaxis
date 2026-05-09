@@ -53,9 +53,9 @@ CREATE TABLE IF NOT EXISTS driver_locations (
 );
 
 -- ==================== ÍNDICES ====================
-CREATE INDEX IF NOT EXISTS idx_rides_passenger ON rides(passenger_id);
-CREATE INDEX IF NOT EXISTS idx_rides_driver ON rides(driver_id);
-CREATE INDEX IF NOT EXISTS idx_rides_status ON rides(status);
-CREATE INDEX IF NOT EXISTS idx_messages_ride ON messages(ride_id);
-CREATE INDEX IF NOT EXISTS idx_driver_online ON driver_locations(is_online);
+CREATE INDEX idx_rides_passenger ON rides(passenger_id);
+CREATE INDEX idx_rides_driver ON rides(driver_id);
+CREATE INDEX idx_rides_status ON rides(status);
+CREATE INDEX idx_messages_ride ON messages(ride_id);
+CREATE INDEX idx_driver_online ON driver_locations(is_online);
 

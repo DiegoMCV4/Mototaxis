@@ -29,15 +29,24 @@ class TrackingUseCases {
   }
 
   async saveChatMessage(data) {
-    const { rideId, senderId, message } = data;
+    const { rideId, senderId, text, message } = data;
+    const content = text || message;
     const msg = new Message({
       id: uuidv4(),
       rideId,
       senderId,
-      message
+      message: content
     });
     await this.trackingRepository.saveMessage(msg);
     return msg;
+  }
+
+  async createRide(data) {
+    return this.trackingRepository.createRide(data);
+  }
+
+  async updateRideStatus(rideId, status) {
+    return this.trackingRepository.updateRideStatus(rideId, status);
   }
 
   async setDriverOffline(driverId) {

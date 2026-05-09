@@ -38,10 +38,10 @@ CREATE TABLE IF NOT EXISTS wallets (
 );
 
 -- ==================== ÍNDICES ====================
-CREATE INDEX IF NOT EXISTS idx_pm_user ON payment_methods(user_id);
-CREATE INDEX IF NOT EXISTS idx_tx_user ON transactions(user_id);
-CREATE INDEX IF NOT EXISTS idx_tx_ride ON transactions(ride_id);
-CREATE INDEX IF NOT EXISTS idx_tx_status ON transactions(status);
+CREATE INDEX idx_pm_user ON payment_methods(user_id);
+CREATE INDEX idx_tx_user ON transactions(user_id);
+CREATE INDEX idx_tx_ride ON transactions(ride_id);
+CREATE INDEX idx_tx_status ON transactions(status);
 
 -- ==================== DATOS DE PRUEBA ====================
 INSERT INTO wallets (user_id, balance) VALUES
