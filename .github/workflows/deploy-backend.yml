@@ -13,7 +13,6 @@ jobs:
   deploy-to-aws:
     name: 🚀 Deploy a Doble Instancia EC2
     runs-on: ubuntu-latest
-    if: ${{ secrets.EC2_SSH_KEY != '' }}
 
     steps:
       - name: ⬇️ Checkout código

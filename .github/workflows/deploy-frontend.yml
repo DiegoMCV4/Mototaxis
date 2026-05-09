@@ -48,7 +48,6 @@ jobs:
   deploy-app-aws:
     name: 📱 Deploy App Operativa → AWS S3
     runs-on: ubuntu-latest
-    if: ${{ secrets.AWS_ACCESS_KEY_ID != '' }}  # Solo corre si el secret existe
 
     steps:
       - name: ⬇️ Checkout código
