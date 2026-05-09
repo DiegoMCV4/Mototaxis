@@ -1,16 +1,15 @@
-name: Deploy Frontend — Vercel (Landing) + S3 (App)
+name: Deploy Frontend — Vercel (Landing)
 
 on:
   push:
     branches: [ main ]
     paths:
-      - 'frontend/**'
       - 'landing/**'
       - '.github/workflows/deploy-frontend.yml'
 
 jobs:
   # ============================================================
-  # JOB 1: Landing Page → Vercel (automático vía integración)
+  # JOB: Landing Page → Vercel
   # ============================================================
   deploy-landing-vercel:
     name: 🌐 Deploy Landing Page → Vercel
@@ -32,75 +31,12 @@ jobs:
         working-directory: landing
 
       - name: 🏗️ Build Landing Page
-        run: npm run build
+        run: npm install && npm run build
         working-directory: landing
         env:
-          VITE_APP_URL: https://app.mrt.viewdns.net
+          VITE_APP_URL: https://landing-psi-blond.vercel.app
           VITE_PLAY_STORE_URL: ${{ secrets.PLAY_STORE_URL || '#' }}
 
       - name: 🚀 Deploy a Vercel
         run: npx vercel deploy --prod --yes --token ${{ secrets.VERCEL_TOKEN }} --scope diegomcv4s-projects
         working-directory: landing
-
-  # ============================================================
-  # JOB 2: App Operativa → S3 + CloudFront (AWS)
-  # ============================================================
-  deploy-app-aws:
-    name: 📱 Deploy App Operativa → AWS S3
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: ⬇️ Checkout código
-        uses: actions/checkout@v4
-
-      - name: ⚙️ Configurar Node.js 18
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: 📦 Instalar dependencias — Frontend App
-        run: npm install
-        working-directory: frontend
-
-      - name: 🏗️ Build App (producción)
-        run: npm run build
-        working-directory: frontend
-        env:
-          VITE_API_URL:    https://mrt.viewdns.net/api
-          VITE_SOCKET_URL: https://mrt.viewdns.net
-
-      - name: 🔐 Configurar credenciales AWS
-        if: ${{ secrets.S3_BUCKET_APP != '' }}
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region:            us-east-1
-
-      - name: 📤 Subir build a S3
-        if: ${{ secrets.S3_BUCKET_APP != '' }}
-        run: |
-          aws s3 sync frontend/dist/ s3://${{ secrets.S3_BUCKET_APP }} \
-            --delete \
-            --cache-control "max-age=31536000,public" \
-            --exclude "index.html"
-          aws s3 cp frontend/dist/index.html s3://${{ secrets.S3_BUCKET_APP }}/index.html \
-            --cache-control "no-cache,no-store,must-revalidate"
-
-      - name: 🔄 Invalidar caché CloudFront
-        if: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID != '' }}
-        run: |
-          aws cloudfront create-invalidation \
-            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
-            --paths "/*"
-
-      - name: ✅ Deploy completado
-        run: |
-          echo "🎉 Proceso de despliegue finalizado"
-          if [ "${{ secrets.S3_BUCKET_APP }}" != "" ]; then
-            echo "   Frontend App desplegado en AWS"
-          else
-            echo "   ⚠️ Salteado despliegue AWS (sin S3_BUCKET_APP)"
-          fi
