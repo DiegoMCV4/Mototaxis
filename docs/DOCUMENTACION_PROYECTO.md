@@ -1,7 +1,12 @@
 # Documentación Formal del Proyecto: Plataforma MotoTaxi
 
 ## 1. Introducción
-El presente documento detalla la arquitectura, diseño y plan de implementación de la plataforma "MotoTaxi", una solución de transporte de pasajeros. Ante la necesidad de escalar la plataforma y soportar una alta concurrencia de usuarios (pasajeros y conductores), el sistema ha sido diseñado bajo una arquitectura de microservicios, reemplazando modelos monolíticos tradicionales. Esto permite que cada componente del sistema opere, se escale y se mantenga de manera independiente. El uso de la Arquitectura Hexagonal garantiza un código limpio y agnóstico a la tecnología, facilitando el desarrollo multiplataforma tanto para la web (React + Vite) como para dispositivos móviles y tablets (React Native), todo orquestado y desplegado en la nube (AWS y Vercel).
+
+El servicio de mototaxis representa uno de los medios de transporte urbano más utilizados en Latinoamérica, especialmente en ciudades donde la congestión vehicular hace indispensable la agilidad y el bajo costo de este tipo de servicio. Sin embargo, la mayoría de las operaciones se gestionan de manera informal, careciendo de tecnología que permita la trazabilidad del viaje, la seguridad del pasajero y la optimización del tiempo de respuesta del conductor.
+
+La plataforma **MotoTaxi** nace como respuesta a esta necesidad, ofreciendo una solución de software completa que conecta en tiempo real a pasajeros y conductores de mototaxi mediante una aplicación móvil nativa y un panel de administración web. El sistema gestiona el ciclo de vida completo de un viaje: desde la solicitud del pasajero, la asignación del conductor, el rastreo GPS en tiempo real, el pago electrónico y la calificación del servicio.
+
+Desde el punto de vista técnico, el proyecto ha sido desarrollado siguiendo una arquitectura de **microservicios** con el patrón **Hexagonal (Ports & Adapters)**, lo que permite que cada componente del sistema opere, se escale y se despliegue de manera completamente independiente. Esta decisión arquitectónica elimina los puntos únicos de fallo de los sistemas monolíticos y facilita la incorporación de nuevas funcionalidades sin interrumpir el servicio en producción. La infraestructura de backend reside en **Amazon Web Services (AWS)** sobre contenedores Docker, mientras que la capa de presentación pública se distribuye globalmente a través de **Vercel**, y los pipelines de integración continua son gestionados mediante **GitHub Actions**.
 
 ## 2. Objetivos del Proyecto
 
@@ -25,17 +30,30 @@ Cada microservicio está estructurado utilizando el patrón de Arquitectura Hexa
 *   **Infraestructura (Adapters):** Implementa los detalles técnicos (bases de datos, APIs externas, controladores web). De esta forma, el framework web (Express) o la base de datos (MySQL/Redis) pueden ser reemplazados sin afectar la lógica central.
 
 ### 3.2 Definición de los 05 Microservicios
-La lógica de la plataforma se ha dividido en los siguientes servicios de backend, gestionados tras un **API Gateway**:
-1.  **Auth Service:** Gestiona el registro, login y emisión de JSON Web Tokens (JWT) para pasajeros y conductores.
-2.  **Rides Service:** Controla el ciclo de vida de los viajes (solicitud, aceptación, inicio, finalización y cancelación).
-3.  **Tracking Service:** Maneja el seguimiento GPS en tiempo real mediante WebSockets y Redis, así como el chat en vivo entre usuarios.
-4.  **Payments Service:** Encargado de procesar las tarifas, métodos de pago y el historial de transacciones.
-5.  **Ratings Service:** Permite la calificación y comentarios bidireccionales al finalizar el viaje.
+La lógica de la plataforma se ha dividido en los siguientes servicios de backend, todos gestionados a través de un **API Gateway** centralizado en el puerto `3000`:
+
+| # | Microservicio | Puerto | Base de Datos | Tecnología | Propósito Principal |
+|---|---|---|---|---|---|
+| 1 | **Auth Service** | 3001 | MySQL (`mototaxi_auth`) | Node.js + Express + JWT | Registro, login y emisión de tokens de acceso. |
+| 2 | **Rides Service** | 3002 | MySQL (`mototaxi_rides`) | Node.js + Express | Gestión del ciclo de vida completo de los viajes. |
+| 3 | **Tracking Service** | 3004 | MySQL + Redis | Node.js + Socket.IO | Rastreo GPS en tiempo real y chat en vivo entre usuarios. |
+| 4 | **Payments Service** | 3005 | MySQL (`mototaxi_payments`) | Node.js + Express | Procesamiento de tarifas y métodos de pago. |
+| 5 | **Ratings Service** | 3003 | MongoDB (`mototaxi_ratings`) | Node.js + Express + Mongoose | Calificaciones y comentarios al finalizar el viaje. |
 
 ### 3.3 Gestión de Bases de Datos Independientes
-Para cumplir con el principio de *Database-per-service*:
-*   **MySQL:** Utilizado de forma independiente en *Auth*, *Rides*, *Payments* y *Ratings* para mantener la integridad transaccional e historial de datos estructurados.
-*   **Redis:** Empleado en el *Tracking Service* para el manejo ultra-rápido de coordenadas geoespaciales (GeoHash) y sesiones activas de WebSockets.
+Para cumplir con el principio de *Database-per-service*, cada microservicio posee su propia base de datos aislada. Ningún servicio accede directamente a la base de datos de otro; toda comunicación se realiza a través de las APIs y eventos.
+
+| # | Base de Datos | Motor | Servicio Propietario | Tipo |
+|---|---|---|---|---|
+| 1 | `mototaxi_auth` | MySQL 8.0 | Auth Service | Relacional |
+| 2 | `mototaxi_rides` | MySQL 8.0 | Rides Service + Tracking | Relacional |
+| 3 | `mototaxi_payments` | MySQL 8.0 | Payments Service | Relacional |
+| 4 | `mototaxi_ratings` | MongoDB 7.0 | Ratings Service | NoSQL Documental |
+| 5 | Cache de ubicaciones | Redis 7 | Tracking Service | NoSQL In-Memory |
+
+*   **MySQL:** Utilizado en *Auth*, *Rides* y *Payments* para mantener la integridad transaccional e historial de datos estructurados, incluyendo las tablas de `rides` y `messages` para el chat.
+*   **MongoDB:** Empleado en el *Ratings Service* por su esquema flexible, ideal para almacenar documentos de calificación de estructura variable.
+*   **Redis:** Empleado en el *Tracking Service* para el manejo ultra-rápido de coordenadas geoespaciales en tiempo real y la gestión de sesiones activas de WebSockets.
 
 ## 4. Seguridad y Acceso
 
@@ -91,7 +109,11 @@ El panel administrativo (Dashboard Web), al interactuar con datos altamente sens
 ## 9. Anexos y Evidencias
 
 ### 9.1 Repositorios de GitHub
-El código fuente ha sido versionado utilizando Git, separando lógicamente (o mediante monorepo) los servicios. Se hace uso intensivo de *Pull Requests* y ramas de *features* para evitar conflictos en `main`.
+El código fuente ha sido versionado en el siguiente repositorio público de GitHub:
+
+🔗 **Repositorio principal:** [https://github.com/DiegoMCV4/Mototaxis](https://github.com/DiegoMCV4/Mototaxis)
+
+La estructura del repositorio es un **monorepo** organizado por carpetas (`/services`, `/mobile`, `/landing`, `/frontend`, `/database`, `/nginx`). Se utilizan ramas de *features* y *develop* para el desarrollo, y la rama `main` recibe únicamente código estable que activa los pipelines de CI/CD automáticamente vía **GitHub Actions**.
 
 ### 9.2 Evidencia del Equipo de Trabajo
 

@@ -188,7 +188,22 @@ export default function PassengerDashboard({ navigation }) {
     );
   };
 
-  const onSendMessage = (text) => {\n    const socket = socketService.getSocket();\n    if (socket && currentRideIdRef.current) {\n      const msgData = {\n        rideId: currentRideIdRef.current,\n        senderId: user?.id || 'passenger-demo',\n        text,\n        timestamp: new Date().toISOString()\n      };\n      console.log('📤 PASSENGER emite message:', JSON.stringify(msgData));\n      socket.emit('message', msgData);\n    } else {\n      console.error('❌ No hay socket o rideId para enviar mensaje');\n      Alert.alert('Error', 'No se pudo enviar el mensaje. Intenta de nuevo.');\n    }\n  };
+  const onSendMessage = (text) => {
+    const socket = socketService.getSocket();
+    if (socket && currentRideIdRef.current) {
+      const msgData = {
+        rideId: currentRideIdRef.current,
+        senderId: user?.id || 'passenger-demo',
+        text,
+        timestamp: new Date().toISOString()
+      };
+      console.log('📤 PASSENGER emite message:', JSON.stringify(msgData));
+      socket.emit('message', msgData);
+    } else {
+      console.error('❌ No hay socket o rideId para enviar mensaje');
+      Alert.alert('Error', 'No se pudo enviar el mensaje. Intenta de nuevo.');
+    }
+  };
 
   const requestRide = () => {
     if (!location || !destination) {
