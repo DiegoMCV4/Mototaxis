@@ -17,6 +17,7 @@ jobs:
   deploy-backend:
     name: 🚀 Deploy Backend a AWS ECS
     runs-on: ubuntu-latest
+    if: ${{ secrets.AWS_ACCOUNT_ID != '' }}  # Solo corre si las credenciales AWS están configuradas
 
     steps:
       - name: ⬇️ Checkout código

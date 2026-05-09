@@ -39,13 +39,8 @@ jobs:
           VITE_PLAY_STORE_URL: ${{ secrets.PLAY_STORE_URL || '#' }}
 
       - name: 🚀 Deploy a Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token:   ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id:  ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_LANDING }}
-          working-directory: landing
-          vercel-args: '--prod'
+        run: npx vercel deploy --prod --yes --token ${{ secrets.VERCEL_TOKEN }} --scope diegomcv4s-projects
+        working-directory: landing
 
   # ============================================================
   # JOB 2: App Operativa → S3 + CloudFront (AWS)
@@ -53,6 +48,7 @@ jobs:
   deploy-app-aws:
     name: 📱 Deploy App Operativa → AWS S3
     runs-on: ubuntu-latest
+    if: ${{ secrets.AWS_ACCESS_KEY_ID != '' }}  # Solo corre si el secret existe
 
     steps:
       - name: ⬇️ Checkout código
