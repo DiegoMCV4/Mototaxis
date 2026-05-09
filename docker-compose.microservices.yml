@@ -1,0 +1,172 @@
+version: '3.8'
+
+services:
+
+  # ================================================================
+  # BASES DE DATOS
+  # ================================================================
+
+  mysql-auth:
+    image: mysql:8.0
+    container_name: mototaxi-db-auth
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: mototaxi123
+      MYSQL_DATABASE: mototaxi_auth
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_auth_data:/var/lib/mysql
+      - ./database/auth-init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - mototaxi-network
+
+  mysql-rides:
+    image: mysql:8.0
+    container_name: mototaxi-db-rides
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: mototaxi123
+      MYSQL_DATABASE: mototaxi_rides
+    ports:
+      - "3308:3306"
+    volumes:
+      - mysql_rides_data:/var/lib/mysql
+      - ./database/rides-init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - mototaxi-network
+
+  mongodb:
+    image: mongo:7.0
+    container_name: mototaxi-mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_DATABASE: mototaxi_ratings
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./database/ratings-init.js:/docker-entrypoint-initdb.d/ratings-init.js
+    networks:
+      - mototaxi-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: mototaxi-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - mototaxi-network
+
+  mysql-payments:
+    image: mysql:8.0
+    container_name: mototaxi-db-payments
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: mototaxi123
+      MYSQL_DATABASE: mototaxi_payments
+    ports:
+      - "3309:3306"
+    volumes:
+      - mysql_payments_data:/var/lib/mysql
+      - ./database/payments-init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - mototaxi-network
+
+  # ================================================================
+  # MICROSERVICIOS (Expuestos para que el Gateway los alcance)
+  # ================================================================
+
+  auth-service:
+    build: ./services/auth-service
+    container_name: mototaxi-auth
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      DB_HOST: mysql-auth
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: mototaxi123
+      DB_NAME: mototaxi_auth
+      JWT_SECRET: mototaxi-jwt-secret-key-2024
+    networks:
+      - mototaxi-network
+
+  rides-service:
+    build: ./services/rides-service
+    container_name: mototaxi-rides
+    restart: always
+    ports:
+      - "3002:3002"
+    environment:
+      PORT: 3002
+      DB_HOST: mysql-rides
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: mototaxi123
+      DB_NAME: mototaxi_rides
+    networks:
+      - mototaxi-network
+
+  ratings-service:
+    build: ./services/ratings-service
+    container_name: mototaxi-ratings
+    restart: always
+    ports:
+      - "3003:3003"
+    environment:
+      PORT: 3003
+      MONGO_URI: mongodb://mongodb:27017/mototaxi_ratings
+    networks:
+      - mototaxi-network
+
+  tracking-service:
+    build: ./services/tracking-service
+    container_name: mototaxi-tracking
+    restart: always
+    ports:
+      - "3004:3004"
+    environment:
+      PORT: 3004
+      DB_HOST: mysql-rides
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: mototaxi123
+      DB_NAME: mototaxi_rides
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    networks:
+      - mototaxi-network
+
+  payments-service:
+    build: ./services/payments-service
+    container_name: mototaxi-payments
+    restart: always
+    ports:
+      - "3005:3005"
+    environment:
+      PORT: 3005
+      DB_HOST: mysql-payments
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: mototaxi123
+      DB_NAME: mototaxi_payments
+    networks:
+      - mototaxi-network
+
+volumes:
+  mysql_auth_data:
+  mysql_rides_data:
+  mysql_payments_data:
+  mongodb_data:
+  redis_data:
+
+networks:
+  mototaxi-network:
+    driver: bridge

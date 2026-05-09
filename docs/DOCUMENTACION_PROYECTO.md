@@ -80,34 +80,24 @@ Una única base de código que se compila para iOS y Android.
 
 La infraestructura de producción ha sido desplegada utilizando **Amazon Web Services (AWS)** y **Vercel**, adoptando un enfoque basado en contenedores Docker para garantizar la portabilidad y reproducibilidad del entorno.
 
-### 6.1 Backend en Amazon Web Services (AWS — EC2 + Docker Compose)
+### 6.1 Backend en Amazon Web Services (AWS — Arquitectura Dual EC2)
 
-El backend completo se ejecuta sobre una instancia **Amazon EC2 (Ubuntu Server)** en la región `us-east-1`. La orquestación de los 12 contenedores (microservicios + bases de datos + Nginx) se realiza con **Docker Compose**, lo que garantiza que todos los servicios levanten en el orden correcto respetando sus dependencias (health checks).
+Siguiendo las mejores prácticas de seguridad y escalabilidad, la infraestructura se ha dividido en dos instancias físicas independientes comunicadas a través de la red privada de AWS (VPC).
 
-**Arquitectura de la instancia EC2:**
+#### **Instancia 1: Gateway & Proxy (Pública)**
+*   **IP Pública:** `3.133.144.159`
+*   **Propósito:** Punto único de entrada al sistema. Gestiona el cifrado SSL y el enrutamiento.
+*   **Servicios:** Nginx (Proxy Reverso) y API Gateway.
+*   **Configuración:** `docker-compose.gateway.yml`
 
-| Capa | Contenedor | Tecnología | Puerto Expuesto |
-|---|---|---|---|
-| Reverse Proxy | Nginx | Nginx + Certbot (HTTPS) | 80, 443 |
-| API Gateway | mototaxi-gateway | Node.js + Express | 3000 |
-| Microservicio 1 | mototaxi-auth | Node.js + JWT | 3001 (interno) |
-| Microservicio 2 | mototaxi-rides | Node.js + Express | 3002 (interno) |
-| Microservicio 3 | mototaxi-ratings | Node.js + Mongoose | 3003 (interno) |
-| Microservicio 4 | mototaxi-tracking | Node.js + Socket.IO | 3004 |
-| Microservicio 5 | mototaxi-payments | Node.js + Express | 3005 (interno) |
-| Base de datos 1 | mototaxi-db-auth | MySQL 8.0 | 3307 (interno) |
-| Base de datos 2 | mototaxi-db-rides | MySQL 8.0 | 3308 (interno) |
-| Base de datos 3 | mototaxi-mongodb | MongoDB 7.0 | 27017 (interno) |
-| Base de datos 4 | mototaxi-redis | Redis 7 | 6379 (interno) |
-| Base de datos 5 | mototaxi-db-payments | MySQL 8.0 | 3309 (interno) |
+#### **Instancia 2: Microservicios & Datos (Privada)**
+*   **IP Privada:** `172.31.32.154`
+*   **Propósito:** Capa de cómputo y persistencia. Solo es accesible desde la Instancia 1.
+*   **Servicios:** Auth, Rides, Ratings, Tracking, Payments y todas las bases de datos (MySQL, MongoDB, Redis).
+*   **Configuración:** `docker-compose.microservices.yml`
 
-> **IP Pública del servidor:** `3.133.144.159`
-> Solo los puertos 80, 443, 3000 y 3004 están expuestos al exterior mediante las reglas del **Security Group** de AWS. El resto de los servicios están aislados en la red interna Docker `mototaxi-network`.
-
-**Flujo del tráfico en producción:**
-```
-Usuario (HTTPS) → Nginx (443) → API Gateway (3000) → Microservicio correspondiente → Base de datos propia
-```
+**Ventaja de esta Arquitectura:**
+Si un atacante intenta acceder directamente a las bases de datos desde Internet, fallará, ya que la Instancia 2 no tiene puertos de datos abiertos al público, solo responde a las peticiones internas enviadas por el API Gateway en la Instancia 1.
 
 ### 6.2 Frontend Landing Page en Vercel
 La *Landing Page* pública (`/landing`) está desplegada en **Vercel** y disponible en:

@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+
+  # ================================================================
+  # NGINX — La puerta de entrada (Puerto 80/443)
+  # ================================================================
+  nginx:
+    build: ./nginx
+    container_name: mototaxi-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot:ro
+      - ./frontend/dist:/var/www/html/app:ro
+    depends_on:
+      - api-gateway
+    networks:
+      - mototaxi-network
+
+  # ================================================================
+  # API GATEWAY — Redirige a la Máquina de Microservicios (172.31.32.154)
+  # ================================================================
+  api-gateway:
+    build: ./services/api-gateway
+    container_name: mototaxi-gateway
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      # Apuntamos a la IP PRIVADA de la segunda instancia
+      AUTH_SERVICE_URL:     http://172.31.32.154:3001
+      RIDES_SERVICE_URL:    http://172.31.32.154:3002
+      RATINGS_SERVICE_URL:  http://172.31.32.154:3003
+      TRACKING_SERVICE_URL: http://172.31.32.154:3004
+      PAYMENTS_SERVICE_URL: http://172.31.32.154:3005
+    networks:
+      - mototaxi-network
+
+networks:
+  mototaxi-network:
+    driver: bridge
