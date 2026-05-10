@@ -39,7 +39,7 @@ function Navbar() {
           >{item.name}</a>
         ))}
       </div>
-      <a href="https://expo.dev/accounts/mrt04/projects/mobile/builds/f6e14eff-2997-4bcf-8839-38db2abec004" target="_blank" rel="noreferrer" className="btn-primary" style={{ padding: '10px 24px', fontSize: '0.9rem' }}>
+      <a href="/motoch.apk" target="_blank" rel="noreferrer" className="btn-primary" style={{ padding: '10px 24px', fontSize: '0.9rem' }}>
         Descargar APK 📱
       </a>
     </nav>
@@ -73,7 +73,7 @@ function Hero() {
 
         {/* CTA */}
         <div className="animate-fadeUp delay-300" style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <a href="https://expo.dev/accounts/mrt04/projects/mobile/builds/f6e14eff-2997-4bcf-8839-38db2abec004" target="_blank" rel="noreferrer" className="btn-primary" style={{ fontSize: '1.05rem', padding: '16px 36px' }}>
+          <a href="/motoch.apk" target="_blank" rel="noreferrer" className="btn-primary" style={{ fontSize: '1.05rem', padding: '16px 36px' }}>
             📱 Descargar APK
           </a>
           <a href="#caracteristicas" className="btn-outline" style={{ fontSize: '1.05rem', padding: '16px 36px' }}>
@@ -288,7 +288,7 @@ function CTA() {
           Descarga el archivo APK e instálalo en tu dispositivo Android para probar el sistema completo en tiempo real.
         </p>
         <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <a href="https://expo.dev/accounts/mrt04/projects/mobile/builds/f6e14eff-2997-4bcf-8839-38db2abec004" target="_blank" rel="noreferrer" className="btn-primary" style={{ fontSize: '1.1rem', padding: '18px 40px' }}>
+          <a href="/motoch.apk" target="_blank" rel="noreferrer" className="btn-primary" style={{ fontSize: '1.1rem', padding: '18px 40px' }}>
             ⬇️ Descargar App
           </a>
         </div>
