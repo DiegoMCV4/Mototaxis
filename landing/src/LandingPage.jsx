@@ -26,16 +26,21 @@ function Navbar() {
         <span>Moto<span className="gradient-text">Taxi</span></span>
       </div>
       <div style={{ display: 'flex', gap: 32, fontSize: '0.9rem' }}>
-        {['Inicio','Características','Cómo funciona','Equipo'].map(item => (
-          <a key={item} href={`#${item.toLowerCase().replace('ó','o').replace(' ','-')}`}
+        {[
+          { name: 'Inicio', href: '#inicio' },
+          { name: 'Características', href: '#caracteristicas' },
+          { name: 'Cómo funciona', href: '#como-funciona' },
+          { name: 'Equipo', href: '#equipo' }
+        ].map(item => (
+          <a key={item.name} href={item.href}
             style={{ color: 'var(--text-2)', textDecoration: 'none', transition: 'color 0.2s' }}
             onMouseEnter={e => e.target.style.color = '#fff'}
             onMouseLeave={e => e.target.style.color = 'var(--text-2)'}
-          >{item}</a>
+          >{item.name}</a>
         ))}
       </div>
-      <a href={APP_URL} className="btn-primary" style={{ padding: '10px 24px', fontSize: '0.9rem' }}>
-        Abrir App →
+      <a href="https://expo.dev/accounts/mrt04/projects/mobile/builds/167f7e08-df9a-4d0c-8930-0fcd90710719" target="_blank" rel="noreferrer" className="btn-primary" style={{ padding: '10px 24px', fontSize: '0.9rem' }}>
+        Descargar APK 📱
       </a>
     </nav>
   );
@@ -68,11 +73,11 @@ function Hero() {
 
         {/* CTA */}
         <div className="animate-fadeUp delay-300" style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <a href={APP_URL} className="btn-primary" style={{ fontSize: '1.05rem', padding: '16px 36px' }}>
-            🚗 Solicitar Viaje
+          <a href="https://expo.dev/accounts/mrt04/projects/mobile/builds/167f7e08-df9a-4d0c-8930-0fcd90710719" target="_blank" rel="noreferrer" className="btn-primary" style={{ fontSize: '1.05rem', padding: '16px 36px' }}>
+            📱 Descargar APK
           </a>
-          <a href="#como-funciona" className="btn-outline" style={{ fontSize: '1.05rem', padding: '16px 36px' }}>
-            Ver cómo funciona
+          <a href="#caracteristicas" className="btn-outline" style={{ fontSize: '1.05rem', padding: '16px 36px' }}>
+            Ver características
           </a>
         </div>
 
@@ -244,6 +249,31 @@ function TechStack() {
   );
 }
 
+/* ────────────────────────── Equipo ─────────────────────── */
+function Team() {
+  return (
+    <section id="equipo" style={{ background: 'var(--bg)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      <div className="container">
+        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+          <span className="badge" style={{ marginBottom: 20 }}>🎓 Desarrollo</span>
+          <h2 className="section-title">El Equipo <span className="gradient-text">UNACH</span></h2>
+        </div>
+        <div className="glass-card" style={{ padding: 40, textAlign: 'center', maxWidth: 800, margin: '0 auto' }}>
+          <p style={{ fontSize: '1.1rem', color: 'var(--text-1)', lineHeight: 1.8, marginBottom: 24 }}>
+            Proyecto elaborado por los estudiantes:<br/>
+            <strong style={{ color: 'var(--orange)' }}>Diego, Anuar, Pablo, Jesus</strong>
+          </p>
+          <p style={{ fontSize: '1rem', color: 'var(--text-2)' }}>
+            Estudiantes de la <strong>UNACH</strong><br/>
+            Proyecto de la materia <strong>Taller 4</strong><br/>
+            Impartida por el profe <strong>GUTIÉRREZ ALFARO LUIS, DR</strong>
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ────────────────────────── CTA Final ──────────────────── */
 function CTA() {
   return (
@@ -253,13 +283,13 @@ function CTA() {
     }}>
       <div className="container">
         <div style={{ fontSize: '4rem', marginBottom: 24 }} className="animate-float">🏍️</div>
-        <h2 className="section-title">¿Listo para el viaje?</h2>
+        <h2 className="section-title">¿Listo para probarla?</h2>
         <p style={{ color: 'var(--text-2)', fontSize: '1.1rem', marginBottom: 40, maxWidth: 480, margin: '16px auto 40px' }}>
-          Accede a la plataforma y solicita tu primer viaje en segundos.
+          Descarga el archivo APK e instálalo en tu dispositivo Android para probar el sistema completo en tiempo real.
         </p>
         <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <a href={APP_URL} className="btn-primary" style={{ fontSize: '1.1rem', padding: '18px 40px' }}>
-            🚗 Abrir la App
+          <a href="https://expo.dev/accounts/mrt04/projects/mobile/builds/167f7e08-df9a-4d0c-8930-0fcd90710719" target="_blank" rel="noreferrer" className="btn-primary" style={{ fontSize: '1.1rem', padding: '18px 40px' }}>
+            ⬇️ Descargar App
           </a>
         </div>
       </div>
@@ -301,6 +331,7 @@ export default function LandingPage() {
         <Features />
         <Architecture />
         <TechStack />
+        <Team />
         <CTA />
       </main>
       <Footer />
