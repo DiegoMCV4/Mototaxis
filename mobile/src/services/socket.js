@@ -12,13 +12,13 @@ class SocketService {
   connect() {
     if (!this.socket) {
       this.socket = io(API_URL, {
-        transports: ['websocket', 'polling'],
+        transports: ['websocket'],
         autoConnect: true,
         reconnection: true,
-        reconnectionAttempts: Infinity,
+        reconnectionAttempts: 5,
         reconnectionDelay: 2000,
-        reconnectionDelayMax: 10000,
-        timeout: 30000,
+        reconnectionDelayMax: 5000,
+        timeout: 10000,
       });
 
       this.socket.on('connect', () => {

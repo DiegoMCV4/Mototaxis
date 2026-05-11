@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Dimensions, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import MapView, { Marker, Polyline } from 'react-native-maps';
+import { View as MapView, Image as Marker, View as Polyline } from 'react-native';
 import * as Location from 'expo-location';
 import socketService from '../services/socket';
 import { AuthContext } from '../context/AuthContext';
@@ -312,65 +312,29 @@ export default function DriverDashboard({ navigation }) {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      {/* MAPA FULLSCREEN */}
-      {location ? (
-        <MapView
-          ref={mapRef}
-          style={StyleSheet.absoluteFillObject}
-          initialRegion={location}
-          showsUserLocation={false}
-          showsMyLocationButton={false}
-          userInterfaceStyle={theme.mapStyle}
-        >
-          {/* Driver Marker */}
-          <Marker coordinate={{ latitude: location.latitude, longitude: location.longitude }} anchor={{x: 0.5, y: 0.5}}>
-            <Text style={{fontSize: 32}}>🏍️</Text>
-          </Marker>
-          
-          {/* Incoming Request Marker */}
-          {incomingRequest && (
-            <Marker coordinate={{ latitude: incomingRequest.latitude, longitude: incomingRequest.longitude }}>
-              <View style={styles.passengerMarker}>
-                <View style={[styles.passengerMarkerInner, { borderColor: isDarkMode ? theme.card : 'white' }]} />
-              </View>
-            </Marker>
-          )}
-          
-          {/* Current Ride Passenger Location */}
-          {currentRide && (
-            <Marker coordinate={{ latitude: currentRide.latitude, longitude: currentRide.longitude }}>
-              <View style={styles.passengerMarker}>
-                <View style={[styles.passengerMarkerInner, { borderColor: isDarkMode ? theme.card : 'white' }]} />
-              </View>
-            </Marker>
-          )}
+      {/* REAL MAP BACKGROUND (LocationIQ) */}
+      <View style={styles.simulatedMap}>
+        {location ? (
+          <Image 
+            source={{ uri: `https://maps.locationiq.com/v3/staticmap?key=pk.8907c428cb018631af5ee5cd6e642477&center=${location.latitude},${location.longitude}&zoom=16&size=800x800&format=png&maptype=streets&markers=icon:large-red-cutout|${location.latitude},${location.longitude}` }}
+            style={StyleSheet.absoluteFillObject}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={[styles.loadingContainer, { backgroundColor: theme.bg }]}>
+            <ActivityIndicator size="large" color={theme.primary} />
+          </View>
+        )}
 
-          {/* Current Ride Destination */}
-          {currentRide && currentRide.destination && (
-            <Marker coordinate={{ latitude: currentRide.destination.latitude, longitude: currentRide.destination.longitude }}>
-              <View style={[styles.passengerMarker, { backgroundColor: 'rgba(17, 24, 39, 0.2)' }]}>
-                <View style={[styles.passengerMarkerInner, { backgroundColor: theme.text, borderColor: isDarkMode ? theme.card : 'white' }]} />
-              </View>
-            </Marker>
-          )}
-
-          {/* Route to Destination */}
-          {currentRide && currentRide.destination && (
-            <Polyline
-              coordinates={[
-                { latitude: currentRide.latitude, longitude: currentRide.longitude },
-                { latitude: currentRide.destination.latitude, longitude: currentRide.destination.longitude }
-              ]}
-              strokeColor={theme.text}
-              strokeWidth={3}
-            />
-          )}
-        </MapView>
-      ) : (
-        <View style={[styles.loadingContainer, { backgroundColor: theme.bg }]}>
-          <ActivityIndicator size="large" color={theme.primary} />
-        </View>
-      )}
+        {/* Incoming/Current Passenger Simulation */}
+        {(incomingRequest || currentRide) && (
+          <View style={{ position: 'absolute', top: '25%', left: '60%' }}>
+            <View style={styles.passengerMarker}>
+              <View style={[styles.passengerMarkerInner, { borderColor: isDarkMode ? theme.card : 'white' }]} />
+            </View>
+          </View>
+        )}
+      </View>
 
       {/* TOP BAR / EARNINGS */}
       <SafeAreaView style={styles.topBar}>
@@ -514,6 +478,27 @@ export default function DriverDashboard({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  simulatedMap: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: 'hidden',
+  },
+  gridContainer: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  gridLineH: {
+    position: 'absolute',
+    width: '100%',
+    height: 1,
+  },
+  gridLineV: {
+    position: 'absolute',
+    height: '100%',
+    width: 1,
+  },
+  street: {
+    position: 'absolute',
+    opacity: 0.5,
   },
   loadingContainer: {
     ...StyleSheet.absoluteFillObject,

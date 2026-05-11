@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Dimensions, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Dimensions, Platform, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import MapView, { Marker, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
 import socketService from '../services/socket';
 import { AuthContext } from '../context/AuthContext';
@@ -281,58 +280,44 @@ export default function PassengerDashboard({ navigation }) {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      {/* FULLSCREEN MAP */}
-      {location ? (
-        <MapView
-          ref={mapRef}
-          style={StyleSheet.absoluteFillObject}
-          initialRegion={location}
-          showsUserLocation={false} 
-          showsMyLocationButton={false}
-          userInterfaceStyle={theme.mapStyle}
-          onPress={handleMapPress}
-        >
-          {/* Passenger Location */}
-          <Marker coordinate={{ latitude: location.latitude, longitude: location.longitude }}>
-            <View style={styles.passengerMarker}>
-              <View style={[styles.passengerMarkerInner, { borderColor: isDarkMode ? theme.card : 'white' }]} />
-            </View>
-          </Marker>
-
-          {/* Drivers nearby */}
-          {nearbyDrivers.map((driver) => (
-            <Marker
-              key={driver.driverId || driver.socketId}
-              coordinate={{ latitude: driver.latitude, longitude: driver.longitude }}
-              anchor={{x: 0.5, y: 0.5}}
-            >
-              <Text style={{fontSize: 32}}>🏍️</Text>
-            </Marker>
+      {/* REAL MAP BACKGROUND (LocationIQ) */}
+      <View style={styles.simulatedMap}>
+        {location ? (
+          <Image 
+            source={{ uri: `https://maps.locationiq.com/v3/staticmap?key=pk.8907c428cb018631af5ee5cd6e642477&center=${location.latitude},${location.longitude}&zoom=16&size=800x800&format=png&maptype=streets&markers=icon:large-blue-cutout|${location.latitude},${location.longitude}` }}
+            style={StyleSheet.absoluteFillObject}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={[styles.loadingContainer, { backgroundColor: theme.bg }]}>
+            <ActivityIndicator size="large" color={theme.text} />
+          </View>
+        )}
+        
+        {/* Overlay for grid feeling (optional, gives a tech look) */}
+        <View style={[styles.gridContainer, { opacity: 0.2 }]}>
+          {[...Array(10)].map((_, i) => (
+            <View key={`h-${i}`} style={[styles.gridLineH, { top: `${i * 10}%`, backgroundColor: isDarkMode ? '#fff' : '#000' }]} />
           ))}
-
-          {/* Destination */}
-          {destination && (
-            <Marker coordinate={destination}>
-              <View style={[styles.destinationMarker, { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1, borderRadius: 12, padding: 5 }]}>
-                <View style={[styles.destinationSquare, { backgroundColor: theme.text }]} />
-              </View>
-            </Marker>
-          )}
-
-          {/* Route */}
-          {destination && location && (
-            <Polyline
-              coordinates={[location, destination]}
-              strokeColor={theme.text}
-              strokeWidth={3}
-            />
-          )}
-        </MapView>
-      ) : (
-        <View style={[styles.loadingContainer, { backgroundColor: theme.bg }]}>
-          <ActivityIndicator size="large" color={theme.text} />
         </View>
-      )}
+        
+        {/* Passenger Marker (Custom overlay) */}
+        <View style={[styles.passengerMarker, { position: 'absolute', top: '50%', left: '50%', marginTop: -12, marginLeft: -12 }]}>
+          <View style={[styles.passengerMarkerInner, { borderColor: isDarkMode ? theme.card : 'white' }]} />
+        </View>
+
+        {/* Nearby Drivers Simulation */}
+        {nearbyDrivers.length > 0 && (
+          nearbyDrivers.map((driver, index) => (
+            <View 
+              key={driver.driverId || index} 
+              style={{ position: 'absolute', top: `${45 + (index * 5)}%`, left: `${40 + (index * 8)}%` }}
+            >
+              <Text style={{ fontSize: 32 }}>🏍️</Text>
+            </View>
+          ))
+        )}
+      </View>
 
       {/* FLOATING TOP BAR & SEARCH */}
       <SafeAreaView style={styles.topArea}>
@@ -524,6 +509,27 @@ export default function PassengerDashboard({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  simulatedMap: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: 'hidden',
+  },
+  gridContainer: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  gridLineH: {
+    position: 'absolute',
+    width: '100%',
+    height: 1,
+  },
+  gridLineV: {
+    position: 'absolute',
+    height: '100%',
+    width: 1,
+  },
+  street: {
+    position: 'absolute',
+    opacity: 0.5,
   },
   loadingContainer: {
     ...StyleSheet.absoluteFillObject,
