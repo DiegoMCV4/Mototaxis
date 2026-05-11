@@ -33,11 +33,11 @@ services:
     environment:
       PORT: 3000
       # Apuntamos a la IP PRIVADA de la segunda instancia
-      AUTH_SERVICE_URL:     http://172.31.32.154:3001
-      RIDES_SERVICE_URL:    http://172.31.32.154:3002
-      RATINGS_SERVICE_URL:  http://172.31.32.154:3003
-      TRACKING_SERVICE_URL: http://172.31.32.154:3004
-      PAYMENTS_SERVICE_URL: http://172.31.32.154:3005
+      AUTH_SERVICE_URL:     http://172.31.2.42:3001
+      RIDES_SERVICE_URL:    http://172.31.2.42:3002
+      RATINGS_SERVICE_URL:  http://172.31.2.42:3003
+      TRACKING_SERVICE_URL: http://172.31.2.42:3004
+      PAYMENTS_SERVICE_URL: http://172.31.2.42:3005
     networks:
       - mototaxi-network
 
