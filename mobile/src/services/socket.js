@@ -2,7 +2,7 @@ import { io } from 'socket.io-client';
 
 // IP local de la computadora donde corre el API Gateway (puerto 3000)
 // Reemplazar si cambia la IP en la red local.
-const API_URL = 'http://3.133.144.159:3000';
+const API_URL = 'https://mrt.viewdns.net';
 
 class SocketService {
   constructor() {

@@ -11,7 +11,7 @@ node_modules/
 npm-debug.log*
 
 # Build
-frontend/dist/
+# frontend/dist/
 frontend/android/
 
 # IDE

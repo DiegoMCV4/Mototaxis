@@ -38,8 +38,10 @@ export const AuthProvider = ({ children }) => {
       setUser(userData);
       return { success: true };
     } catch (error) {
-      console.error('Login error:', error.response?.data || error.message);
+      console.error('Login error full:', error);
       const serverMsg = error.response?.data?.message || error.response?.data?.error;
+      const errorDetail = error.response ? `Status: ${error.response.status}` : `Network Error: ${error.message}`;
+      Alert.alert('Error de Login', `${serverMsg || 'Error al iniciar sesión'}\n\nDetalle: ${errorDetail}`);
       return { success: false, message: serverMsg || 'Error al iniciar sesión' };
     }
   };
@@ -55,8 +57,10 @@ export const AuthProvider = ({ children }) => {
       setUser(userData);
       return { success: true, message: 'Usuario registrado con éxito' };
     } catch (error) {
-      console.error('Register error:', error.response?.data || error.message);
+      console.error('Register error full:', error);
       const serverMsg = error.response?.data?.message || error.response?.data?.error;
+      const errorDetail = error.response ? `Status: ${error.response.status}` : `Network Error: ${error.message}`;
+      Alert.alert('Error de Registro', `${serverMsg || 'Error al registrar'}\n\nDetalle: ${errorDetail}`);
       return { success: false, message: serverMsg || 'Error al registrar' };
     }
   };

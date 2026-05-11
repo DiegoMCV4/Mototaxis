@@ -17,6 +17,7 @@
     },
     "android": {
       "package": "com.diegomcv4.mototaxi",
+      "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"

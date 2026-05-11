@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Reemplazar localhost por tu IP local (ej. 192.168.0.22) para que el teléfono pueda conectarse al backend
-const API_URL = 'http://3.133.144.159:3000/api';
+const API_URL = 'https://mrt.viewdns.net/api';
 
 const apiClient = axios.create({
   baseURL: API_URL,
